@@ -1,6 +1,8 @@
 package com.jachs.httpclient;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.GetMethod;
@@ -9,6 +11,7 @@ import org.apache.commons.httpclient.methods.RequestEntity;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.httpclient.protocol.Protocol;
+import org.apache.commons.io.IOUtils;
 
 /***
  * @author zhanchaohan
@@ -40,6 +43,9 @@ public class HttpClientUtill {
 			postMethod.setRequestEntity(entity);
 
 			httpClient.executeMethod(postMethod);
+			
+			System.out.println("状态码:"+postMethod.getStatusCode());
+			
 			String result = postMethod.getResponseBodyAsString();
 			postMethod.releaseConnection();
 			return result;
@@ -67,6 +73,9 @@ public class HttpClientUtill {
 		getMethod.addRequestHeader("Content-Type", "application/json;charset=utf-8");
 		try {
 			httpClient.executeMethod(getMethod);
+			
+			System.out.println("状态码:"+getMethod.getStatusCode());
+			
 			String result = new String(getMethod.getResponseBody(), "UTF-8");
 			getMethod.releaseConnection();
 			return result;
@@ -74,5 +83,31 @@ public class HttpClientUtill {
 			e.printStackTrace();
 		}
 		return null;
+	}
+	/***
+	 * 下载文件
+	 * @param urlParam
+	 * @throws IOException 
+	 */
+	public void downLoad(String urlParam,OutputStream os) throws IOException {
+		if(urlParam.startsWith("https")){  
+	         //https请求
+	         Protocol myhttps = new Protocol("https", new MySSLProtocolSocketFactory(),443);
+	         Protocol.registerProtocol("https", myhttps);
+	     }
+		HttpClient httpClient = new HttpClient();
+		httpClient.getHttpConnectionManager().getParams().setConnectionTimeout(CONNECTIONTIMEOUT);
+		GetMethod getMethod = new GetMethod(urlParam);
+		getMethod.getParams().setParameter(HttpMethodParams.SO_TIMEOUT, PARAMETERTIMEOUT);
+		
+		httpClient.executeMethod(getMethod);
+		
+		System.out.println("状态码:"+getMethod.getStatusCode());
+		InputStream is=getMethod.getResponseBodyAsStream();
+		
+		IOUtils.copy(is, os);
+		
+		IOUtils.closeQuietly(os);
+		IOUtils.closeQuietly(is);
 	}
 }
